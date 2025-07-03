@@ -17,7 +17,7 @@ from monai.losses import SSIMLoss
 from kornia.losses import PSNRLoss
 from generative.losses import PerceptualLoss, PatchAdversarialLoss
 
-from utils import (save_comparison, saving_model, show_losses)
+from utils import (save_comparison, saving_model)
 from config import (LAMBDA_SSIM, LAMBDA_PERCEPT, LAMBDA_L1, LAMBDA_PSNR)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -97,10 +97,6 @@ def train_fn(train_dl, G, D,
         fake_pred = D(torch.cat([input_img, fake_img_noisy.detach()], dim=1))
         if isinstance(fake_pred, list):
             fake_pred = fake_pred[-1]
-
-        # using patch-adversarial loss now..
-        # loss_d_fake = criterion_adv(fake_pred, fake_label, for_discriminator = True)
-        # loss_d_real = criterion_adv(real_pred, real_label, for_discriminator = True)
 
         loss_d_fake = criterion_adv(fake_pred, target_is_real=False, for_discriminator=True)
         loss_d_real = criterion_adv(real_pred, target_is_real=True, for_discriminator=True)
@@ -185,10 +181,8 @@ def train_loop(train_dl, G, D, num_epoch, betas=(0.5, 0.999)):
 
         if (e + 1) % 25 == 0:
             saving_model(D, G, e + 1)
-            show_losses(total_loss_g, total_loss_d)
             save_comparison(real_img, fake_img, input_img, e + 1)
 
-    show_losses(total_loss_g, total_loss_d)
     print("Training completed successfully")
 
     return G, D

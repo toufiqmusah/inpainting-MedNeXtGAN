@@ -44,8 +44,7 @@ def save_comparison(real_img, fake_img, input_img, epoch):
     plt.suptitle(f'Epoch {epoch}')
     
     plt.savefig(f'{GENERATED_DIR}/comparison_epoch_{epoch}.png', bbox_inches='tight', dpi=224)
-    
-    # log to wandb
+
     wandb.log({"Comparison": wandb.Image(plt.gcf(), caption=f"Epoch {epoch}")})
     plt.close()
 
