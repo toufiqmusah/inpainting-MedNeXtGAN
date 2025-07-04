@@ -8,6 +8,7 @@ import nibabel as nib
 from glob import glob
 from config import DEVICE
 from models import MedNextGenerator3D
+from nibabel.processing import resample_from_to
 
 from monai.transforms import (
     Compose,
@@ -34,11 +35,10 @@ def read_paths_pair(root_dir: str):
 
     return void_mri_files, mask_files
 
-_pad = DivisiblePad(k=8, mode="constant", constant_values=0)         
 transforms = Compose([
-    EnsureChannelFirst(),
     Spacing(pixdim=(2, 2, 2), mode=("bilinear")),
-    _pad,
+    DivisiblePad(k=8, mode="constant", constant_values=0),
+    CenterSpatialCrop(roi_size=(128, 128, 80)),         
     ScaleIntensityRangePercentiles(
         lower=0,
         upper=99.5,
@@ -46,11 +46,6 @@ transforms = Compose([
         b_max=1.0
     )
 ])
-
-def make_postproc(orig_depth):
-    """Crop pad and center-crop to 256×256×155."""
-    before = _pad.pad_width[2][0]              
-    return Compose([lambda x: x[..., before:before + orig_depth], CenterSpatialCrop((256, 256, 155))])
 
 def load_case(void_path, mask_path):
 
@@ -77,12 +72,12 @@ def run_inference(model, input_dir, output_dir):
         with torch.no_grad():
             output_tensor = model(input_tensor)
 
-        postproc = make_postproc(pair.shape[-1])
-        output_tensor = postproc(output_tensor.cpu().squeeze(0).numpy())
+        output_tensor = output_tensor.cpu().squeeze(0).numpy()
 
         output_img = nib.Nifti1Image(output_tensor, affine=affine, header=header)
         output_filename = os.path.join(output_dir, os.path.basename(void_path).replace("t1n-voided", ""))
-        nib.save(output_img, output_filename)
+        output_resampled = resample_from_to(output_img, (output_img.shape, affine), order=1)
+        nib.save(output_resampled, output_filename)
         print(f"Saved inpainted image to {output_filename}")
 
 if __name__ == "__main__":
