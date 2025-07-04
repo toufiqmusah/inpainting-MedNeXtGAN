@@ -78,7 +78,7 @@ def run_inference(model, input_dir, output_dir):
         output_filename = os.path.join(output_dir, os.path.basename(void_path).replace("t1n-voided", ""))
         output_resampled = resample_from_to(output_img, (output_img.shape, affine), order=1)
         nib.save(output_resampled, output_filename)
-        print(f"Saved inpainted image to {output_filename}")
+        print(f"Saved inpainted image to {output_filename}, shape: {output_resampled.shape}")
 
 if __name__ == "__main__":
     args   = argument_parser()
