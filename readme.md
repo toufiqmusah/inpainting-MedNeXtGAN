@@ -30,7 +30,7 @@ cd ..
 python inpainting-MedNeXtGAN/main.py \
   --input_dir "<TRAIN_DATA_DIR>" \
   --batch_size 2 \
-  --num_epochs 250
+  --num_epochs 500
 ```
 
 **Parameters:**

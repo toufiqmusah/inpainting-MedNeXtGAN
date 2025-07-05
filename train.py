@@ -79,13 +79,13 @@ def train_fn(train_dl, G, D,
         loss_g = loss_g_gan + LAMBDA_L1 * loss_g_l1 + LAMBDA_PERCEPT * loss_g_perceptual + LAMBDA_SSIM * loss_g_ssim + loss_g_psnr * LAMBDA_PSNR
 
         # Log Test Loss:
-        if i % 10 == 0:
-            print(f"""Batch {i}, 
-                      Generator Loss: {loss_g.item():.4f}, 
-                      L1 Loss: {loss_g_l1.item():.4f}, 
-                      Perceptual Loss: {loss_g_perceptual.item():.4f}, 
-                      SSIM Loss: {loss_g_ssim.item():.4f}, 
-                      PSNR Loss: {loss_g_psnr.item():.4f}""")
+        # if i % 10 == 0:
+        #    print(f"""Batch {i}, 
+        #              Generator Loss: {loss_g.item():.4f}, 
+        #              L1 Loss: {loss_g_l1.item():.4f}, 
+        #              Perceptual Loss: {loss_g_perceptual.item():.4f}, 
+        #              SSIM Loss: {loss_g_ssim.item():.4f}, 
+        #              PSNR Loss: {loss_g_psnr.item():.4f}""")
 
         optimizer_g.zero_grad()
         loss_g.backward()
@@ -124,7 +124,7 @@ def train_fn(train_dl, G, D,
             g_grad_norm.item(), d_grad_norm.item())
 
 
-def train_loop(train_dl, G, D, num_epoch, betas=(0.5, 0.999)):
+def train_loop(train_dl, G, D, num_epoch, LOG_DIV=5, betas=(0.5, 0.999)):
     G.to(device)
     D.to(device)
 
@@ -179,7 +179,7 @@ def train_loop(train_dl, G, D, num_epoch, betas=(0.5, 0.999)):
             "epoch": e + 1
         })
 
-        if (e + 1) % 25 == 0:
+        if (e + 1) % LOG_DIV == 0:
             saving_model(D, G, e + 1)
             save_comparison(real_img, fake_img, input_img, e + 1)
 

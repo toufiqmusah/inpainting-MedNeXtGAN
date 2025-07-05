@@ -11,6 +11,8 @@ INPUT_DIR = "ASNR-MICCAI-BraTS2023-Local-Synthesis-Challenge-Training"
 # training parameters
 BATCH_SIZE = 2
 NUM_EPOCHS = 30
+LOG_DIV = 5
+
 
 # loss weights
 LAMBDA_L1 = 1.0

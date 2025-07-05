@@ -8,13 +8,14 @@ import argparse
 from train import train_loop
 from data import get_dataloader
 from models import (MedNextGenerator3D, PatchDiscriminator3D)
-from config import (NUM_EPOCHS, INPUT_DIR, BATCH_SIZE, WANDB_PROJECT)
+from config import (NUM_EPOCHS, INPUT_DIR, BATCH_SIZE, WANDB_PROJECT, LOG_DIV)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train MedNextGAN for MRI inpainting")
     parser.add_argument("--input_dir", type=str, default=INPUT_DIR, help="Path to the input data directory")
     parser.add_argument("--batch_size", type=int, default=BATCH_SIZE, help="Batch size for training")
     parser.add_argument("--num_epochs", type=int, default=NUM_EPOCHS, help="Number of epochs for training")
+    parser.add_argument("--log_div", type=int, default=LOG_DIV, help="Log every n epochs")
     return parser.parse_args()
 
 args = parse_args()
@@ -31,4 +32,4 @@ D = PatchDiscriminator3D
 
 wandb.init(project=WANDB_PROJECT)
 
-trained_G, trained_D = train_loop(dataloader, G, D, args.num_epochs)
+trained_G, trained_D = train_loop(dataloader, G, D, args.num_epochs, args.log_div)
