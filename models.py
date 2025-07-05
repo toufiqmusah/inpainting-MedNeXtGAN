@@ -7,7 +7,7 @@ from nnunet_mednext import create_mednext_v1
 from generative.networks.nets import PatchDiscriminator
 
 
-
+"""
 class MedNextGenerator3D(nn.Module):
     def __init__(self, input_channels=1, output_channels=1):
         super(MedNextGenerator3D, self).__init__()
@@ -24,7 +24,6 @@ class MedNextGenerator3D(nn.Module):
         self.final_activation = nn.Tanh()
     
     def _replace_norm_with_instancenorm(self):
-        """Replace GroupNorm or LayerNorm with InstanceNorm3d"""
         for name, module in self.model.named_modules():
 
             if isinstance(module, nn.GroupNorm) or isinstance(module, nn.LayerNorm):
@@ -52,8 +51,26 @@ class MedNextGenerator3D(nn.Module):
     def forward(self, x):
         x = self.model(x)
         return self.final_activation(x)
-    
 
+"""
+    
+class MedNextGenerator3D(nn.Module):
+    def __init__(self, input_channels=2, output_channels=1):
+        super(MedNextGenerator3D, self).__init__()
+
+        self.model = create_mednext_v1(
+            num_input_channels=input_channels,
+            num_classes=output_channels,
+            model_id='M',              
+            kernel_size=3,
+            deep_supervision=False,
+        )
+
+        self.final_activation = nn.Tanh()
+
+    def forward(self, x):
+        x = self.model(x)
+        return self.final_activation(x)
     
 PatchDiscriminator3D = PatchDiscriminator(
     spatial_dims=3,

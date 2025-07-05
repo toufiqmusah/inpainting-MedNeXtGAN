@@ -17,6 +17,8 @@ from monai.transforms import (
     CenterSpatialCrop,
     ScaleIntensityRangePercentiles)
 
+# DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
 from monai.data import Dataset, DataLoader
 
 def argument_parser():
@@ -28,7 +30,7 @@ def argument_parser():
     return parser.parse_args()
 
 void_transforms = Compose([
-    Spacing(pixdim=(2, 2, 2)),
+    Spacing(pixdim=(2, 2, 2), mode="bilinear"),
     CenterSpatialCrop(roi_size=(128, 128, 80)),
     DivisiblePad(k=16, mode="constant", constant_values=0),
     ScaleIntensityRangePercentiles(
@@ -55,28 +57,43 @@ def read_paths_pair(root_dir: str):
 
 def run_inference(model, input_dir, output_dir, void_transforms, mask_transforms):
     os.makedirs(output_dir, exist_ok=True)
-
     void_paths, mask_paths = read_paths_pair(input_dir)
-
     for void_path, mask_path in zip(void_paths, mask_paths):
-        v = np.expand_dims(nib.load(void_path), axis=0)
-        m = np.expand_dims(nib.load(mask_path), axis=0)
-
-        v_transformed = void_transforms(v)
-        m_transformed = mask_transforms(m)
-
-        subject = np.stack([v_transformed, m_transformed], axis=0)
-
-        print(f"Processing {os.path.basename(void_path)}, with shape {subject.shape})")
-        input = torch.from_numpy(subject).squeeze(0).float()
-        output = model(input)
+        v = nib.load(void_path)
+        m = nib.load(mask_path)
+        
+        # Assuming transforms expect and return (C, D, H, W) where C=1
+        v_f = np.expand_dims(v.get_fdata(), axis=0)
+        m_f = np.expand_dims(m.get_fdata(), axis=0)
+        
+        v_transformed = void_transforms(v_f) # Shape: (1, 128, 128, 80)
+        m_transformed = mask_transforms(m_f) # Shape: (1, 128, 128, 80)
+        
+        # 1. Concatenate along the channel axis (axis=0) to create one 2-channel image
+        subject_channels = np.concatenate([v_transformed, m_transformed], axis=0) # New shape: (2, 128, 128, 80)
+        
+        # 2. Add a batch dimension (N=1) for the model
+        subject_batch = np.expand_dims(subject_channels, axis=0) # New shape: (1, 2, 128, 128, 80)
+        
+        print(f"Processing {os.path.basename(void_path)}, with shape {subject_batch.shape})")
+        
+        # 3. Convert to tensor (no .squeeze() needed)
+        input_tensor = torch.from_numpy(subject_batch).float()
+        
+        output = model(input_tensor)
+        
         print(f"Output shape: {output.shape}")
-        output_nib = nib.Nifti1Image(output.numpy(), affine=v.affine, header=v.header.copy())
-        output_filename = os.path.join(output_dir, os.path.basename(void_path).replace("t1n-voided", ""))
+        output_nib = nib.Nifti1Image(output.detach().cpu().numpy(), affine=v.affine, header=v.header.copy())
+        output_filename = os.path.join(output_dir, os.path.basename(void_path).replace("-t1n-voided", ""))
         nib.save(output_nib, output_filename)
         print(f"Saved inpainted image to {output_filename}, shape: {output_nib.get_fdata().shape}")
 
-
+if __name__ == "__main__":
+    args   = argument_parser()
+    net    = MedNextGenerator3D().to(DEVICE)
+    net.load_state_dict(torch.load(args.model_weights, map_location=DEVICE))
+    net.eval()
+    run_inference(net, args.input_dir, args.output_dir, void_transforms, mask_transforms)
 
 
 '''
