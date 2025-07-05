@@ -7,7 +7,7 @@ from nnunet_mednext import create_mednext_v1
 from generative.networks.nets import PatchDiscriminator
 
 
-"""
+
 class MedNextGenerator3D(nn.Module):
     def __init__(self, input_channels=1, output_channels=1):
         super(MedNextGenerator3D, self).__init__()
@@ -71,6 +71,10 @@ class MedNextGenerator3D(nn.Module):
     def forward(self, x):
         x = self.model(x)
         return self.final_activation(x)
+    
+
+"""
+
     
 PatchDiscriminator3D = PatchDiscriminator(
     spatial_dims=3,

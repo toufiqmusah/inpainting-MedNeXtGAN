@@ -39,10 +39,10 @@ paired_transforms = Compose([
     # Orientationd(keys=["mri", "mask", "label"], axcodes="RAS"),
     Spacingd(
         keys=["mri", "mask", "label"],
-        pixdim=(2, 2, 2),
+        pixdim=(1.8, 1.8, 1.2),
         mode=("bilinear", "bilinear", "nearest")
     ),
-    CenterSpatialCropd(keys=["mri", "mask", "label"], roi_size=(128, 128, 80)),
+    CenterSpatialCropd(keys=["mri", "mask", "label"], roi_size=(128, 128, 128)),
     DivisiblePadD(keys=["mri", "mask", "label"], k=16, mode="constant", constant_values=0),
     ScaleIntensityRangePercentilesd(
         keys=["mri", "label"],
@@ -58,7 +58,7 @@ paired_transforms = Compose([
 def get_dataloader(input_dir, batch_size=1):
     data_files = read_paths_pair(input_dir)
     paired_dataset = Dataset(data=data_files, transform=paired_transforms)
-    subset = Subset(paired_dataset, indices = list(range(150)))
+    subset = Subset(paired_dataset, indices = list(range(350)))
     paired_loader = DataLoader(subset, batch_size=batch_size, shuffle=True)
 
     return paired_loader
