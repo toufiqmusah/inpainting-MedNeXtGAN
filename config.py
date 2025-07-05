@@ -9,16 +9,17 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 INPUT_DIR = "ASNR-MICCAI-BraTS2023-Local-Synthesis-Challenge-Training"
 
 # training parameters
+LOG_DIV = 5
 BATCH_SIZE = 2
 NUM_EPOCHS = 30
-LOG_DIV = 5
+USE_SUBSET = False 
 
 
 # loss weights
 LAMBDA_L1 = 1.0
 LAMBDA_PERCEPT = 1.5
 LAMBDA_SSIM = 2.5
-LAMBDA_PSNR = 0.5
+LAMBDA_PSNR = 0.0
 
 # directories
 WEIGHT_DIR = "weight"

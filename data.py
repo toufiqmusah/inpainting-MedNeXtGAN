@@ -55,10 +55,14 @@ paired_transforms = Compose([
     EnsureTyped(keys=["input", "label"]),
 ])
 
-def get_dataloader(input_dir, batch_size=1):
+def get_dataloader(input_dir, batch_size=1, USE_SUBSET=False):
     data_files = read_paths_pair(input_dir)
     paired_dataset = Dataset(data=data_files, transform=paired_transforms)
-    subset = Subset(paired_dataset, indices = list(range(350)))
-    paired_loader = DataLoader(subset, batch_size=batch_size, shuffle=True)
-
-    return paired_loader
+    if USE_SUBSET:
+        print("Using subset of the dataset for training.")
+        subset = Subset(paired_dataset, indices = list(range(350)))
+        paired_loader = DataLoader(subset, batch_size=batch_size, shuffle=True)
+    else:
+        print("Using the full dataset for training.")
+        paired_loader = DataLoader(paired_dataset, batch_size=batch_size, shuffle=True)
+        return paired_loader

@@ -128,7 +128,6 @@ def train_loop(train_dl, G, D, num_epoch, LOG_DIV=5, betas=(0.5, 0.999)):
     G.to(device)
     D.to(device)
 
-
     optimizer_g = torch.optim.Adam(G.parameters(), lr=2e-4, betas=betas)
     optimizer_d = torch.optim.Adam(D.parameters(), lr=1e-5, betas=betas)
 

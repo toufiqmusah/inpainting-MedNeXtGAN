@@ -8,13 +8,14 @@ import argparse
 from train import train_loop
 from data import get_dataloader
 from models import (MedNextGenerator3D, PatchDiscriminator3D)
-from config import (NUM_EPOCHS, INPUT_DIR, BATCH_SIZE, WANDB_PROJECT, LOG_DIV)
+from config import (NUM_EPOCHS, INPUT_DIR, BATCH_SIZE, WANDB_PROJECT, LOG_DIV, USE_SUBSET)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train MedNextGAN for MRI inpainting")
+    parser.add_argument("--use_subset", type=bool, default=USE_SUBSET, help="Use a subset of the dataset for training")
     parser.add_argument("--input_dir", type=str, default=INPUT_DIR, help="Path to the input data directory")
-    parser.add_argument("--batch_size", type=int, default=BATCH_SIZE, help="Batch size for training")
     parser.add_argument("--num_epochs", type=int, default=NUM_EPOCHS, help="Number of epochs for training")
+    parser.add_argument("--batch_size", type=int, default=BATCH_SIZE, help="Batch size for training")
     parser.add_argument("--log_div", type=int, default=LOG_DIV, help="Log every n epochs")
     return parser.parse_args()
 
@@ -24,7 +25,7 @@ args = parse_args()
 WANDB_API_KEY = "8b67af0ea5e8251ee45c6180b5132d513b68c079"  
 wandb.login(key=WANDB_API_KEY)
 
-dataloader = get_dataloader(args.input_dir, batch_size=args.batch_size)
+dataloader = get_dataloader(args.input_dir, batch_size=args.batch_size, USE_SUBSET=args.use_subset)
 
 # model instances
 G = MedNextGenerator3D(input_channels=2, output_channels=1)
