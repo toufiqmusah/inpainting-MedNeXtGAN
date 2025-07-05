@@ -62,6 +62,7 @@ def get_dataloader(input_dir, batch_size=1, USE_SUBSET=False):
         print("Using subset of the dataset for training.")
         subset = Subset(paired_dataset, indices = list(range(350)))
         paired_loader = DataLoader(subset, batch_size=batch_size, shuffle=True)
+        return paired_loader
     else:
         print("Using the full dataset for training.")
         paired_loader = DataLoader(paired_dataset, batch_size=batch_size, shuffle=True)
