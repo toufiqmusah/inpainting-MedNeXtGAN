@@ -22,7 +22,7 @@ def save_comparison(real_img, fake_img, input_img, epoch):
     # to numpy and normalize
     def prepare_slice(slice_tensor):
         slice_np = slice_tensor.cpu().detach().numpy().squeeze()
-        slice_np = (slice_np - slice_np.min()) / (slice_np.max() - slice_np.min())
+        #slice_np = (slice_np - slice_np.min()) / (slice_np.max() - slice_np.min())
         return slice_np
 
     real_np = prepare_slice(real_slice)
