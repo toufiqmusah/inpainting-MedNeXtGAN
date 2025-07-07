@@ -39,10 +39,10 @@ paired_transforms = Compose([
     # Orientationd(keys=["mri", "mask", "label"], axcodes="RAS"),
     Spacingd(
         keys=["mri", "mask", "label"],
-        pixdim=(1.8, 1.8, 1.2),
+        pixdim=(1.5, 1.5, 1.2),
         mode=("bilinear", "bilinear", "nearest")
     ),
-    CenterSpatialCropd(keys=["mri", "mask", "label"], roi_size=(128, 128, 128)),
+    CenterSpatialCropd(keys=["mri", "mask", "label"], roi_size=(160, 160, 128)),
     DivisiblePadD(keys=["mri", "mask", "label"], k=16, mode="constant", constant_values=0),
     ScaleIntensityRangePercentilesd(
         keys=["mri", "label"],
