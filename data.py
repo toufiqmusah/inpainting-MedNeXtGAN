@@ -60,7 +60,7 @@ def get_dataloader(input_dir, batch_size=1, USE_SUBSET=False):
     paired_dataset = Dataset(data=data_files, transform=paired_transforms)
     if USE_SUBSET:
         print("Using subset of the dataset for training.")
-        subset = Subset(paired_dataset, indices = list(range(350)))
+        subset = Subset(paired_dataset, indices = list(range(250)))
         paired_loader = DataLoader(subset, batch_size=batch_size, shuffle=True)
         return paired_loader
     else:
