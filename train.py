@@ -37,89 +37,85 @@ class ScaledPSNRLoss(nn.Module):
         return 1.0 - psnr_norm  # 0 best, 1 worst 
 
 
-def train_fn(train_dl, G, D, 
+def train_fn(train_dl, G, D,
              criterion_mse, criterion_mae, criterion_perceptual, criterion_ssim, criterion_psnr, criterion_adv,
              optimizer_g, optimizer_d, LRScheduler_G, LRScheduler_D, noise_std=0.05):
-
     G.train()
     D.train()
-    
     total_loss_g, total_loss_d, total_loss_ssim, total_loss_perceptual, total_loss_psnr = [], [], [], [], []
-
+    
     for i, batch in enumerate(tqdm(train_dl)):
         input_img = batch["input"].to(device)
         real_img_clean = batch["label"].to(device)
-        
         void = batch["mri"].to(device)
         mask = batch["mask"].to(device)
         target_patch = (batch["label"] * batch["mask"]).to(device)
-
+        
         # Generator Forward Pass
         fake_img_clean = G(input_img)
-
+        fake_patch = fake_img_clean * mask
+        
         # Discriminator Forward Pass + Noise
-        full_fake = void * (1 - mask) + fake_img_clean * mask
-        full_fake_noisy = full_fake + noise_std * torch.randn_like(full_fake)
-        fake_pred = D(torch.cat([input_img, full_fake_noisy], dim=1))
-        # fake_pred = D(torch.cat([input_img, fake_img_noisy], dim=1))
+        fake_patch_noisy = fake_patch + noise_std * torch.randn_like(fake_patch)
+        fake_pred = D(torch.cat([input_img, fake_patch_noisy], dim=1))
+        
+        # Handle multi-scale discriminator output
         if isinstance(fake_pred, list):
             fake_pred = fake_pred[-1]
-
-        # void * (1-msk) + missing_mri * msk
-        full_real = void * (1 - mask) + target_patch
-        full_real_noisy = full_real + noise_std * torch.randn_like(full_real)
-        real_pred = D(torch.cat([input_img, full_real_noisy], dim=1))
+        
+        # Real patch for discriminator
+        real_patch_noisy = target_patch + noise_std * torch.randn_like(target_patch)
+        real_pred = D(torch.cat([input_img, real_patch_noisy], dim=1))
+        
+        # Handle multi-scale discriminator output
         if isinstance(real_pred, list):
             real_pred = real_pred[-1]
-
-        real_label = torch.rand_like(real_pred) * 0.2 + 0.8 # dynamic label smoothing
-        # fake_label = torch.rand_like(fake_pred) * 0.2
-
+            
+        real_label = torch.rand_like(real_pred) * 0.2 + 0.8  # dynamic label smoothing
+        
         # Generator Loss
         loss_g_gan = criterion_mse(fake_pred, real_label)
         loss_g_l1 = criterion_mae(fake_img_clean * mask, target_patch)
         loss_g_perceptual = criterion_perceptual(fake_img_clean * mask, target_patch)
         loss_g_ssim = criterion_ssim(fake_img_clean * mask, target_patch)
         loss_g_psnr = criterion_psnr(fake_img_clean * mask, target_patch)
-
+        
         loss_g = loss_g_gan + LAMBDA_L1 * loss_g_l1 + LAMBDA_PERCEPT * loss_g_perceptual + LAMBDA_SSIM * loss_g_ssim + loss_g_psnr * LAMBDA_PSNR
-
+        
         optimizer_g.zero_grad()
         loss_g.backward()
         torch.nn.utils.clip_grad_norm_(G.parameters(), max_norm=1.0)
         optimizer_g.step()
         LRScheduler_G.step()
-
+        
         # Discriminator Update
-        fake_pred = D(torch.cat([input_img, full_fake_noisy.detach()], dim=1))
+        fake_pred = D(torch.cat([input_img, fake_patch_noisy.detach()], dim=1))
         if isinstance(fake_pred, list):
             fake_pred = fake_pred[-1]
-
+            
         loss_d_fake = criterion_adv(fake_pred, target_is_real=False, for_discriminator=True)
         loss_d_real = criterion_adv(real_pred, target_is_real=True, for_discriminator=True)
-
         loss_d = (loss_d_real + loss_d_fake) * 0.85
-
+        
         optimizer_d.zero_grad()
         loss_d.backward()
         torch.nn.utils.clip_grad_norm_(D.parameters(), max_norm=1.0)
         optimizer_d.step()
         LRScheduler_D.step()
-
+        
         # Track gradients
         g_grad_norm = torch.norm(torch.stack([p.grad.norm() for p in G.parameters() if p.grad is not None]))
         d_grad_norm = torch.norm(torch.stack([p.grad.norm() for p in D.parameters() if p.grad is not None]))
-
+        
         total_loss_g.append(loss_g.item())
         total_loss_d.append(loss_d.item())
         total_loss_ssim.append(loss_g_ssim.item())
         total_loss_psnr.append(loss_g_psnr.item())
         total_loss_perceptual.append(loss_g_perceptual.item())
-
-    return (mean(total_loss_g), mean(total_loss_d), mean(total_loss_ssim), mean(total_loss_perceptual), mean(total_loss_psnr), 
+        
+    return (mean(total_loss_g), mean(total_loss_d), mean(total_loss_ssim), mean(total_loss_perceptual), mean(total_loss_psnr),
             fake_img_clean.detach().cpu(), real_img_clean.detach().cpu(), input_img.detach().cpu(),
             g_grad_norm.item(), d_grad_norm.item())
-
 
 def train_loop(train_dl, G, D, num_epoch, LOG_DIV=5, betas=(0.5, 0.999)):
     G.to(device)
