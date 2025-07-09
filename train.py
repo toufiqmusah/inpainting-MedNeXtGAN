@@ -50,8 +50,9 @@ def train_fn(train_dl, G, D,
         input_img = batch["input"].to(device)
         real_img_clean = batch["label"].to(device)
         
-        target_patch = (batch["label"] * batch["mask"]).to(device)
+        void = batch["mri"].to(device)
         mask = batch["mask"].to(device)
+        target_patch = (batch["label"] * batch["mask"]).to(device)
 
         # Generator Forward Pass
         fake_img_clean = G(input_img)
@@ -61,7 +62,7 @@ def train_fn(train_dl, G, D,
         fake_img_noisy = fake_img_clean.detach() + noise_std * torch.randn_like(fake_img_clean)
 
         # Discriminator Forward Pass
-        full_fake = input_img * (1 - mask) + fake_img_clean.detach() * mask
+        full_fake = void * (1 - mask) + fake_img_clean.detach() * mask
         full_fake_noisy = full_fake + noise_std * torch.randn_like(full_fake)
         fake_pred = D(torch.cat([input_img, full_fake_noisy], dim=1))
         # fake_pred = D(torch.cat([input_img, fake_img_noisy], dim=1))
@@ -69,7 +70,7 @@ def train_fn(train_dl, G, D,
             fake_pred = fake_pred[-1]
 
         # void * (1-msk) + missing_mri * msk
-        full_real = input_img * (1 - mask) + real_img_clean * mask
+        full_real = void * (1 - mask) + real_img_clean * mask
         full_real_noisy = full_real + noise_std * torch.randn_like(full_real)
         real_pred = D(torch.cat([input_img, full_real_noisy], dim=1))
         # real_pred = D(torch.cat([input_img, (batch["mri"] * (1- batch["mask"]) + real_img_noisy * batch["mask"])], dim=1))
