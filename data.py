@@ -52,7 +52,7 @@ paired_transforms = Compose([
         b_max=1.0
     ),
     ConcatItemsd(keys=["mri", "mask"], name="input", dim=0),
-    EnsureTyped(keys=["input", "label"]),
+    EnsureTyped(keys=["input", "mask", "label"]),
 ])
 
 def get_dataloader(input_dir, batch_size=1, USE_SUBSET=False):
