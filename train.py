@@ -57,12 +57,8 @@ def train_fn(train_dl, G, D,
         # Generator Forward Pass
         fake_img_clean = G(input_img)
 
-        # Add noise to discriminator inputs only
-        real_img_noisy = target_patch + noise_std * torch.randn_like(target_patch)
-        fake_img_noisy = fake_img_clean.detach() + noise_std * torch.randn_like(fake_img_clean)
-
-        # Discriminator Forward Pass
-        full_fake = void * (1 - mask) + fake_img_clean.detach() * mask
+        # Discriminator Forward Pass + Noise
+        full_fake = void * (1 - mask) + fake_img_clean * mask
         full_fake_noisy = full_fake + noise_std * torch.randn_like(full_fake)
         fake_pred = D(torch.cat([input_img, full_fake_noisy], dim=1))
         # fake_pred = D(torch.cat([input_img, fake_img_noisy], dim=1))
@@ -70,38 +66,23 @@ def train_fn(train_dl, G, D,
             fake_pred = fake_pred[-1]
 
         # void * (1-msk) + missing_mri * msk
-        full_real = void * (1 - mask) + real_img_clean * mask
+        full_real = void * (1 - mask) + target_patch
         full_real_noisy = full_real + noise_std * torch.randn_like(full_real)
         real_pred = D(torch.cat([input_img, full_real_noisy], dim=1))
-        # real_pred = D(torch.cat([input_img, (batch["mri"] * (1- batch["mask"]) + real_img_noisy * batch["mask"])], dim=1))
         if isinstance(real_pred, list):
             real_pred = real_pred[-1]
 
         real_label = torch.rand_like(real_pred) * 0.2 + 0.8 # dynamic label smoothing
-        fake_label = torch.rand_like(fake_pred) * 0.2
+        # fake_label = torch.rand_like(fake_pred) * 0.2
 
         # Generator Loss
         loss_g_gan = criterion_mse(fake_pred, real_label)
-        loss_g_l1 = criterion_mae(fake_img_clean * mask, real_img_clean * mask)
-        loss_g_perceptual = criterion_perceptual(fake_img_clean * mask, real_img_clean * mask)
-        loss_g_ssim = criterion_ssim(fake_img_clean * mask, real_img_clean * mask)
-        loss_g_psnr = criterion_psnr(fake_img_clean * mask, real_img_clean * mask)
-        #loss_g_gan = criterion_mse(fake_pred, real_label)
-        #loss_g_l1 = criterion_mae(fake_img_clean, real_img_clean)
-        #loss_g_perceptual = criterion_perceptual(fake_img_clean, real_img_clean)
-        #loss_g_ssim = criterion_ssim(fake_img_clean, real_img_clean)
-        #loss_g_psnr = criterion_psnr(fake_img_clean, real_img_clean)
+        loss_g_l1 = criterion_mae(fake_img_clean * mask, target_patch)
+        loss_g_perceptual = criterion_perceptual(fake_img_clean * mask, target_patch)
+        loss_g_ssim = criterion_ssim(fake_img_clean * mask, target_patch)
+        loss_g_psnr = criterion_psnr(fake_img_clean * mask, target_patch)
 
         loss_g = loss_g_gan + LAMBDA_L1 * loss_g_l1 + LAMBDA_PERCEPT * loss_g_perceptual + LAMBDA_SSIM * loss_g_ssim + loss_g_psnr * LAMBDA_PSNR
-
-        # Log Test Loss:
-        # if i % 10 == 0:
-        #    print(f"""Batch {i}, 
-        #              Generator Loss: {loss_g.item():.4f}, 
-        #              L1 Loss: {loss_g_l1.item():.4f}, 
-        #              Perceptual Loss: {loss_g_perceptual.item():.4f}, 
-        #              SSIM Loss: {loss_g_ssim.item():.4f}, 
-        #              PSNR Loss: {loss_g_psnr.item():.4f}""")
 
         optimizer_g.zero_grad()
         loss_g.backward()
