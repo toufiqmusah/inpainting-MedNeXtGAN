@@ -60,11 +60,11 @@ def train_fn(train_dl, G, D,
         fake_img_noisy = fake_img_clean.detach() + noise_std * torch.randn_like(fake_img_clean)
 
         # Discriminator Forward Pass
-        fake_pred = D(torch.cat([input_img, fake_img_noisy], dim=1))
+        fake_pred = D(torch.cat([real_img_clean, fake_img_noisy], dim=1))
         if isinstance(fake_pred, list):
             fake_pred = fake_pred[-1]
 
-        real_pred = D(torch.cat([input_img, real_img_noisy], dim=1))
+        real_pred = D(torch.cat([real_img_clean, real_img_noisy], dim=1))
         if isinstance(real_pred, list):
             real_pred = real_pred[-1]
 
@@ -87,7 +87,7 @@ def train_fn(train_dl, G, D,
         LRScheduler_G.step()
 
         # Discriminator Update
-        fake_pred = D(torch.cat([input_img, fake_img_noisy.detach()], dim=1))
+        fake_pred = D(torch.cat([real_img_clean, fake_img_noisy.detach()], dim=1))
         if isinstance(fake_pred, list):
             fake_pred = fake_pred[-1]
 
