@@ -28,7 +28,7 @@ wandb.login(key=WANDB_API_KEY)
 dataloader = get_dataloader(args.input_dir, batch_size=args.batch_size, USE_SUBSET=args.use_subset)
 
 # model instances
-G = MedNextGenerator3D(input_channels=2, output_channels=1)
+G = MedNextGenerator3D(input_channels=1, output_channels=1)
 D = PatchDiscriminator3D
 
 wandb.init(project=WANDB_PROJECT)

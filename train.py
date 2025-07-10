@@ -45,7 +45,7 @@ def train_fn(train_dl, G, D,
     total_loss_g, total_loss_d, total_loss_ssim, total_loss_perceptual, total_loss_psnr = [], [], [], [], []
     
     for i, batch in enumerate(tqdm(train_dl)):
-        input_img = batch["input"].to(device)
+        input_img = batch["input"][0].to(device)
         # real_img_clean = batch["label"].to(device)
 
         void = batch["mri"].to(device)
@@ -60,11 +60,11 @@ def train_fn(train_dl, G, D,
         fake_img_noisy = fake_img_clean.detach() + noise_std * torch.randn_like(fake_img_clean)
 
         # Discriminator Forward Pass
-        fake_pred = D(torch.cat([real_img_clean, fake_img_noisy], dim=1))
+        fake_pred = D(torch.cat([input_img, fake_img_noisy], dim=1))
         if isinstance(fake_pred, list):
             fake_pred = fake_pred[-1]
 
-        real_pred = D(torch.cat([real_img_clean, real_img_noisy], dim=1))
+        real_pred = D(torch.cat([input_img, real_img_noisy], dim=1))
         if isinstance(real_pred, list):
             real_pred = real_pred[-1]
 
@@ -72,7 +72,8 @@ def train_fn(train_dl, G, D,
         fake_label = torch.rand_like(fake_pred) * 0.2
 
         # Generator Loss
-        loss_g_gan = criterion_mse(fake_pred, real_label)
+        #loss_g_gan = criterion_mse(fake_pred, real_label)
+        loss_g_gan = criterion_adv(fake_pred, target_is_real=True, for_discriminator=False)
         loss_g_l1 = criterion_mae(fake_img_clean, real_img_clean)
         loss_g_perceptual = criterion_perceptual(fake_img_clean, real_img_clean)
         loss_g_ssim = criterion_ssim(fake_img_clean, real_img_clean)
@@ -87,7 +88,7 @@ def train_fn(train_dl, G, D,
         LRScheduler_G.step()
 
         # Discriminator Update
-        fake_pred = D(torch.cat([real_img_clean, fake_img_noisy.detach()], dim=1))
+        fake_pred = D(torch.cat([input_img, fake_img_noisy.detach()], dim=1))
         if isinstance(fake_pred, list):
             fake_pred = fake_pred[-1]
 
