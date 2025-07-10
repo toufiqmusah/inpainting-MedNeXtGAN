@@ -45,11 +45,10 @@ def train_fn(train_dl, G, D,
     total_loss_g, total_loss_d, total_loss_ssim, total_loss_perceptual, total_loss_psnr = [], [], [], [], []
     
     for i, batch in enumerate(tqdm(train_dl)):
-        input_img = batch["input"][0].to(device)
+        input_img = batch["mri"].to(device)
         # real_img_clean = batch["label"].to(device)
-
-        void = batch["mri"].to(device)
-        mask = batch["mask"].to(device)
+        #void = batch["mri"].to(device)
+        #mask = batch["mask"].to(device)
         real_img_clean = (batch["label"] * batch["mask"]).to(device)
         
         # Generator Forward Pass
