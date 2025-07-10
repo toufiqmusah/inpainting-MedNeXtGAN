@@ -80,6 +80,6 @@ PatchDiscriminator3D = PatchDiscriminator(
     spatial_dims=3,
     num_layers_d=3,
     num_channels=96,
-    in_channels=3,
+    in_channels=2,
     out_channels=1
 )
